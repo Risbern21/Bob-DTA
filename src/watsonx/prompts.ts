@@ -19,7 +19,7 @@ const DOC_FORMATS: { [key: string]: string } = {
   php: 'PHPDoc (/** */)',
   rust: 'Rust doc comments (///)',
   swift: 'Swift doc comments (///)',
-  kotlin: 'KDoc (/** */)' 
+  kotlin: 'KDoc (/** */)'
 };
 
 /**
@@ -105,7 +105,7 @@ export function isLanguageSupported(languageId: string): boolean {
     'swift',
     'kotlin'
   ];
-  
+
   return supportedLanguages.includes(languageId.toLowerCase());
 }
 
@@ -160,11 +160,11 @@ const TEST_FILE_PATTERNS: { [key: string]: (fileName: string) => string } = {
 export function getTestFileName(fileName: string, languageId: string): string {
   const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
   const pattern = TEST_FILE_PATTERNS[languageId.toLowerCase()];
-  
+
   if (pattern) {
     return pattern(nameWithoutExt);
   }
-  
+
   // Default pattern
   return `${nameWithoutExt}.test.${languageId}`;
 }
@@ -176,24 +176,69 @@ export function generateTestsPrompt(code: string, languageId: string, fileName: 
   const testFramework = getTestFramework(languageId);
   const language = getLanguageName(languageId);
 
-  return `Generate ${testFramework} unit tests for this ${language} code.
+  return `<|system|>
+You are an expert ${language} developer. You always write complete, working unit test code.
+<|user|>
+Write ${testFramework} unit tests for the following ${language} code from file: ${fileName}
 
-File: ${fileName}
+\`\`\`${languageId}
+${code}
+\`\`\`
+
+Requirements:
+- Use ${testFramework} syntax
+- Include all necessary imports
+- Test happy path, edge cases, and error cases
+- Write descriptive test names
+
+Begin the test file now:
+<|assistant|>
+\`\`\`${languageId}`;
+}
+
+/**
+* Generate bug analysis prompt
+*/
+export function generateBugAnalysisPrompt(code: string, languageId: string): string {
+  const language = getLanguageName(languageId);
+
+  return `You are an expert code reviewer and security analyst. Analyze the following ${language} code for potential bugs, errors, and issues.
 
 Code:
 \`\`\`${languageId}
 ${code}
 \`\`\`
 
-Create tests that cover:
-- Valid inputs (happy path)
-- Edge cases (empty, null, boundary values)
-- Error cases (invalid inputs, exceptions)
-- All functions and methods
+Identify and report:
+1. Logic errors (incorrect conditions, off-by-one errors, infinite loops)
+2. Null/undefined reference errors
+3. Type mismatches or casting issues
+4. Resource leaks (unclosed files, connections, memory leaks)
+5. Security vulnerabilities (SQL injection, XSS, insecure data handling)
+6. Performance issues (inefficient algorithms, unnecessary operations)
+7. Exception handling problems (unhandled exceptions, empty catch blocks)
+8. Concurrency issues (race conditions, deadlocks)
+9. Code smells (duplicated code, overly complex logic)
 
-Use ${testFramework} syntax. Include imports and setup. Write clear test names.
+For each bug found, provide:
+- Line number where the bug occurs
+- Severity: error, warning, or info
+- Clear description of the issue
+- Suggestion for fixing it (if applicable)
 
-Return only the test code, no explanations.`;
+Format your response as a JSON array:
+[
+{
+  "line": <line_number>,
+  "severity": "error|warning|info",
+  "message": "Description of the bug",
+  "suggestion": "How to fix it (optional)"
+}
+]
+
+If no bugs are found, return an empty array: []
+
+Analyze thoroughly but be practical - focus on real issues that could cause problems.`;
 }
 
 // Made with Bob

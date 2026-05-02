@@ -10,6 +10,7 @@ import { StatusBar } from '../ui/statusBar';
 import { IBMAuth } from '../auth/ibmAuth';
 import { AuthState } from '../watsonx/types';
 import { Logger } from '../utils/logger';
+import config from '../utils/config';
 
 export class GenerateDocsFeature {
   private static instance: GenerateDocsFeature;
@@ -127,6 +128,8 @@ export class GenerateDocsFeature {
    */
   private async showDiffEditor(originalDocument: vscode.TextDocument, documentedCode: string): Promise<void> {
     try {
+      const outputMode = config.getDocsOutputMode();
+
       // Create a temporary document for the documented version
       const documentedUri = vscode.Uri.parse(
         `untitled:${originalDocument.fileName}.documented${this.getFileExtension(originalDocument.fileName)}`
@@ -147,20 +150,31 @@ export class GenerateDocsFeature {
         { preview: true }
       );
 
-      // Show action buttons
-      const action = await vscode.window.showInformationMessage(
-        'Documentation generated successfully. Review the changes in the diff editor.',
-        'Apply Changes',
-        'Discard'
-      );
+      // Show action buttons based on output mode
+      let action: string | undefined;
+      if (outputMode === 'replace') {
+        action = await vscode.window.showInformationMessage(
+          'Documentation generated successfully. Review the changes in the diff editor.',
+          'Apply Changes',
+          'Discard'
+        );
+      } else {
+        action = await vscode.window.showInformationMessage(
+          'Documentation generated successfully. Review the changes in the diff editor.',
+          'Save as New File',
+          'Discard'
+        );
+      }
 
       if (action === 'Apply Changes') {
         await this.applyDocumentation(originalDocument, documentedCode);
-        // Close the diff editor
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         vscode.window.showInformationMessage('✓ Documentation applied successfully!');
+      } else if (action === 'Save as New File') {
+        await this.saveAsNewFile(originalDocument, documentedCode);
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+        vscode.window.showInformationMessage('✓ Documented file created successfully!');
       } else if (action === 'Discard') {
-        // Close the diff editor
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
       }
     } catch (error) {
@@ -181,6 +195,27 @@ export class GenerateDocsFeature {
     edit.replace(document.uri, fullRange, documentedCode);
     await vscode.workspace.applyEdit(edit);
     await document.save();
+  }
+
+  /**
+   * Save documented code as a new file
+   */
+  private async saveAsNewFile(originalDocument: vscode.TextDocument, documentedCode: string): Promise<void> {
+    const originalPath = originalDocument.uri.fsPath;
+    const ext = this.getFileExtension(originalPath);
+    const baseName = originalPath.substring(0, originalPath.length - ext.length);
+    const newFilePath = `${baseName}.documented${ext}`;
+    const newFileUri = vscode.Uri.file(newFilePath);
+
+    // Write the documented code to the new file
+    await vscode.workspace.fs.writeFile(newFileUri, Buffer.from(documentedCode, 'utf8'));
+
+    // Open the new file
+    const newDoc = await vscode.workspace.openTextDocument(newFileUri);
+    await vscode.window.showTextDocument(newDoc, {
+      preview: false,
+      viewColumn: vscode.ViewColumn.Beside
+    });
   }
 
   /**

@@ -52,10 +52,8 @@ export class Config {
    * .env fallback:         WATSONX_PROJECT_ID
    */
   public getWatsonXConfig() {
-    // NOTE: The prefix here must match the "contributes.configuration" id in your package.json
-    // If your extension id is "bobDta", use getConfiguration('bobDta.watsonx')
-    // If it's just "watsonx", use getConfiguration('watsonx')
-    const cfg = vscode.workspace.getConfiguration('bobDta.watsonx');
+    // Read from VS Code settings (matches package.json configuration keys)
+    const cfg = vscode.workspace.getConfiguration('watsonx');
 
     const projectId =
       cfg.get<string>('projectId')?.trim() ||
@@ -78,7 +76,7 @@ export class Config {
         'Option 1 — Add to your .env file:\n' +
         '  WATSONX_PROJECT_ID=your-project-id\n\n' +
         'Option 2 — Add to VS Code settings.json:\n' +
-        '  "bobDta.watsonx.projectId": "your-project-id"\n\n' +
+        '  "watsonx.projectId": "your-project-id"\n\n' +
         'Find your Project ID at: watsonx dashboard → your project → Manage → General'
       );
     }
@@ -89,6 +87,34 @@ export class Config {
       model,
       baseUrl: this.getWatsonXBaseUrl(region)
     };
+  }
+
+  /**
+   * Get bug display mode preference
+   */
+  public getBugDisplayMode(): 'inline' | 'panel' | 'both' {
+    const cfg = vscode.workspace.getConfiguration('watsonx');
+    const mode = cfg.get<string>('bugDisplayMode')?.trim() || 'both';
+    
+    if (mode === 'inline' || mode === 'panel' || mode === 'both') {
+      return mode;
+    }
+    
+    return 'both'; // default fallback
+  }
+
+  /**
+   * Get documentation output mode preference
+   */
+  public getDocsOutputMode(): 'replace' | 'newFile' {
+    const cfg = vscode.workspace.getConfiguration('watsonx');
+    const mode = cfg.get<string>('docsOutputMode')?.trim() || 'replace';
+    
+    if (mode === 'replace' || mode === 'newFile') {
+      return mode;
+    }
+    
+    return 'replace'; // default fallback
   }
 
   /**

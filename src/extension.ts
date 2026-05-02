@@ -11,6 +11,7 @@ import { StatusBar } from './ui/statusBar';
 import { WatsonXApiClient } from './watsonx/apiClient';
 import { GenerateDocsFeature } from './features/generateDocs';
 import { GenerateTestsFeature } from './features/generateTests';
+import { AnalyzeBugsFeature } from './features/analyzeBugs';
 import config from './utils/config';
 
 /**
@@ -42,6 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
     WatsonXApiClient.getInstance();
     const docsFeature = GenerateDocsFeature.getInstance();
     const testsFeature = GenerateTestsFeature.getInstance();
+    const bugsFeature = AnalyzeBugsFeature.getInstance();
 
     // Update status bar based on auth state
     const isAuthenticated = await auth.isAuthenticated();
@@ -97,12 +99,24 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     });
 
+    // Analyze Bugs command
+    const analyzeBugsCommand = vscode.commands.registerCommand('watsonx.analyzeBugs', async () => {
+      Logger.info('Analyze Bugs command triggered');
+      try {
+        await bugsFeature.analyzeBugs();
+      } catch (error) {
+        Logger.error('Analyze Bugs command failed', error);
+      }
+    });
+
     // Add commands to subscriptions
     context.subscriptions.push(
       loginCommand,
       logoutCommand,
       generateDocsCommand,
-      generateTestsCommand
+      generateTestsCommand,
+      analyzeBugsCommand,
+      bugsFeature
     );
 
     Logger.info('Bob-DTA extension activated successfully');

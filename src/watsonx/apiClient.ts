@@ -41,10 +41,17 @@ export class WatsonXApiClient {
         model_id: watsonxConfig.model,
         input: prompt,
         parameters: {
-          max_new_tokens: 2000,  // Increased for test generation
-          temperature: 0.3,       // Slightly higher for more creative output
-          top_p: 0.95,            // Increased for more diverse output
-          repetition_penalty: 1.05 // Reduced to allow similar test patterns
+          max_new_tokens: 1024,        // safer ceiling for Granite 8B
+          min_new_tokens: 10,          // prevents immediate empty stop
+          temperature: 0.2,            // low = deterministic code output
+          top_p: 0.85,                 // consistent with low temperature
+          repetition_penalty: 1.05,
+          stop_sequences: [
+            "<|user|>",
+            "<|system|>",
+            "<|endoftext|>"            // Granite's EOS tokens
+          ],
+          decoding_method: "greedy"    // for code: greedy > sampling
         },
         project_id: watsonxConfig.projectId
       };
@@ -69,7 +76,7 @@ export class WatsonXApiClient {
         if (this.retryCount < this.MAX_RETRIES) {
           Logger.info('Received 401, attempting token refresh and retry');
           this.retryCount++;
-          
+
           const newToken = await this.tokenManager.refreshAccessToken();
           if (newToken) {
             return await this.generateText(prompt);
@@ -93,7 +100,7 @@ export class WatsonXApiClient {
         const errorText = await response.text();
         Logger.error('WatsonX API error', { status: response.status, error: errorText });
         this.retryCount = 0;
-        
+
         let errorMessage = `API error: ${response.statusText}`;
         try {
           const errorJson = JSON.parse(errorText);
@@ -102,7 +109,7 @@ export class WatsonXApiClient {
           // If not JSON, use the text as is
           errorMessage = errorText || errorMessage;
         }
-        
+
         throw this.createApiError(response.status, errorMessage);
       }
 
@@ -110,26 +117,34 @@ export class WatsonXApiClient {
       this.retryCount = 0;
 
       const data = await response.json() as WatsonXResponse;
-      
+
       Logger.info('WatsonX API raw response', {
         hasResults: !!data.results,
         resultsLength: data.results?.length || 0,
         fullResponse: JSON.stringify(data).substring(0, 500)
       });
-      
+
       if (!data.results || data.results.length === 0) {
         throw new Error('No results returned from WatsonX API');
       }
 
       const generatedText = data.results[0].generated_text;
-      
-      if (!generatedText) {
+      const stopReason = data.results[0].stop_reason; // add this
+
+      if (!generatedText || generatedText.trim() === '') {
         Logger.warn('WatsonX returned empty generated_text', {
-          result: data.results[0]
+          result: data.results[0],
+          stopReason,                          // "MAX_TOKENS" = context overflow
+          generatedTokenCount: data.results[0].generated_token_count
         });
+
+        if (stopReason === 'MAX_TOKENS') {
+          throw new Error('Model hit token limit. Try with a smaller code snippet.');
+        }
+
         throw new Error('WatsonX returned empty generated_text. The model may not have generated any output.');
       }
-      
+
       Logger.info('WatsonX API request successful', {
         generatedLength: generatedText.length,
         tokenCount: data.results[0].generated_token_count,
@@ -139,7 +154,7 @@ export class WatsonXApiClient {
       return generatedText;
     } catch (error) {
       this.retryCount = 0;
-      
+
       if (error instanceof Error && 'statusCode' in error) {
         // Already an ApiError, rethrow
         throw error;
@@ -147,11 +162,11 @@ export class WatsonXApiClient {
 
       // Network or other errors
       Logger.error('WatsonX API request failed', error);
-      
+
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Network error. Please check your internet connection.');
       }
-      
+
       throw error;
     }
   }

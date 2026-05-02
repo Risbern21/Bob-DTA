@@ -35,6 +35,11 @@
         "command": "watsonx.generateTests",
         "title": "WatsonX: Generate Tests",
         "icon": "$(beaker)"
+      },
+      {
+        "command": "watsonx.analyzeBugs",
+        "title": "WatsonX: Analyze Bugs",
+        "icon": "$(bug)"
       }
     ],
     "menus": {
@@ -46,6 +51,11 @@
         },
         {
           "command": "watsonx.generateTests",
+          "when": "editorLangId =~ /javascript|typescript|python|java|go|cpp|csharp|c|ruby|php|rust|swift|kotlin/",
+          "group": "navigation"
+        },
+        {
+          "command": "watsonx.analyzeBugs",
           "when": "editorLangId =~ /javascript|typescript|python|java|go|cpp|csharp|c|ruby|php|rust|swift|kotlin/",
           "group": "navigation"
         }
@@ -73,6 +83,34 @@
           "type": "string",
           "default": "ibm/granite-8b-code-instruct",
           "description": "WatsonX model to use"
+        },
+        "watsonx.bugDisplayMode": {
+          "type": "string",
+          "enum": [
+            "inline",
+            "panel",
+            "both"
+          ],
+          "default": "both",
+          "description": "How to display detected bugs: inline comments, diagnostics panel, or both",
+          "enumDescriptions": [
+            "Add bug comments directly in the code",
+            "Show bugs in the Problems panel only",
+            "Show bugs in both inline comments and Problems panel"
+          ]
+        },
+        "watsonx.docsOutputMode": {
+          "type": "string",
+          "enum": [
+            "replace",
+            "newFile"
+          ],
+          "default": "replace",
+          "description": "How to output generated documentation",
+          "enumDescriptions": [
+            "Replace the original file with documented code (shows diff for review first)",
+            "Create a new .documented file alongside the original"
+          ]
         }
       }
     }

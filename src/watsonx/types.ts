@@ -7,9 +7,12 @@ export interface WatsonXRequest {
   input: string;
   parameters: {
     max_new_tokens: number;
+    min_new_tokens?: number;
     temperature: number;
     top_p: number;
     repetition_penalty: number;
+    stop_sequences?: string[];
+    decoding_method?: string;
   };
   project_id: string;
 }
@@ -19,6 +22,7 @@ export interface WatsonXResponse {
     generated_text: string;
     generated_token_count?: number;
     input_token_count?: number;
+    stop_reason?: string;
   }>;
   model_id: string;
   created_at: string;

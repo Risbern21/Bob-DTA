@@ -30,13 +30,23 @@
         "command": "watsonx.generateDocs",
         "title": "WatsonX: Generate Documentation",
         "icon": "$(book)"
+      },
+      {
+        "command": "watsonx.generateTests",
+        "title": "WatsonX: Generate Tests",
+        "icon": "$(beaker)"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "watsonx.generateDocs",
-          "when": "editorLangId =~ /javascript|typescript|python|java|go|cpp|csharp|c/",
+          "when": "editorLangId =~ /javascript|typescript|python|java|go|cpp|csharp|c|ruby|php|rust|swift|kotlin/",
+          "group": "navigation"
+        },
+        {
+          "command": "watsonx.generateTests",
+          "when": "editorLangId =~ /javascript|typescript|python|java|go|cpp|csharp|c|ruby|php|rust|swift|kotlin/",
           "group": "navigation"
         }
       ]

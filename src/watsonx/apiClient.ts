@@ -41,10 +41,10 @@ export class WatsonXApiClient {
         model_id: watsonxConfig.model,
         input: prompt,
         parameters: {
-          max_new_tokens: 1000,
-          temperature: 0.2,
-          top_p: 0.9,
-          repetition_penalty: 1.1
+          max_new_tokens: 2000,  // Increased for test generation
+          temperature: 0.3,       // Slightly higher for more creative output
+          top_p: 0.95,            // Increased for more diverse output
+          repetition_penalty: 1.05 // Reduced to allow similar test patterns
         },
         project_id: watsonxConfig.projectId
       };
@@ -111,14 +111,29 @@ export class WatsonXApiClient {
 
       const data = await response.json() as WatsonXResponse;
       
+      Logger.info('WatsonX API raw response', {
+        hasResults: !!data.results,
+        resultsLength: data.results?.length || 0,
+        fullResponse: JSON.stringify(data).substring(0, 500)
+      });
+      
       if (!data.results || data.results.length === 0) {
         throw new Error('No results returned from WatsonX API');
       }
 
       const generatedText = data.results[0].generated_text;
-      Logger.info('WatsonX API request successful', { 
+      
+      if (!generatedText) {
+        Logger.warn('WatsonX returned empty generated_text', {
+          result: data.results[0]
+        });
+        throw new Error('WatsonX returned empty generated_text. The model may not have generated any output.');
+      }
+      
+      Logger.info('WatsonX API request successful', {
         generatedLength: generatedText.length,
-        tokenCount: data.results[0].generated_token_count 
+        tokenCount: data.results[0].generated_token_count,
+        preview: generatedText.substring(0, 200)
       });
 
       return generatedText;

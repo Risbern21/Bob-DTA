@@ -1,15 +1,39 @@
-# Bob-DTA - AI-Powered Code Documentation
+# Bob-DTA - AI-Powered Code Assistant
 
-Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension that uses IBM watsonx.ai and the Granite Code model to automatically generate comprehensive documentation for your code.
+Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension that uses IBM watsonx.ai and the Granite Code model to automatically generate comprehensive documentation and unit tests for your code.
 
 ## Features
 
-### 📄 Generate Documentation (MVP)
+### 📄 Generate Documentation
 - Automatically generates comprehensive inline documentation for your code
-- Supports multiple programming languages (JavaScript, TypeScript, Python, Java, Go, C++, C#, and more)
+- Supports 13+ programming languages (JavaScript, TypeScript, Python, Java, Go, C++, C#, Ruby, PHP, Rust, Swift, Kotlin, and more)
 - Uses language-specific documentation formats (JSDoc, docstrings, JavaDoc, etc.)
 - Shows a diff editor to review changes before applying
-- Powered by IBM's Granite 34B Code Instruct model
+- Powered by IBM's Granite 8B Code Instruct model
+
+### 🧪 Generate Unit Tests ✨ NEW
+- Automatically generates comprehensive unit test suites for your code
+- Detects and uses the appropriate test framework for each language:
+  - JavaScript/TypeScript → Jest
+  - Python → pytest
+  - Java/Kotlin → JUnit 5
+  - Go → Go testing package
+  - C++ → Google Test
+  - C# → xUnit
+  - And more...
+- Generates tests with:
+  - Happy path test cases
+  - Edge cases and boundary conditions
+  - Error handling tests
+  - Mocked dependencies
+  - Clear, descriptive test names
+- Creates test files following language conventions:
+  - `*.test.js` for JavaScript
+  - `test_*.py` for Python
+  - `*Test.java` for Java
+  - `*_test.go` for Go
+  - And more...
+- Opens test file side-by-side with source code
 
 ### 🔐 Secure Authentication
 - OAuth 2.0 integration with IBM Cloud IAM
@@ -19,8 +43,9 @@ Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension th
 
 ### 🎨 User-Friendly Interface
 - Status bar indicator showing connection status
-- Editor toolbar button for quick access
+- Editor toolbar buttons for quick access (📄 Docs, 🧪 Tests)
 - Visual diff editor to review generated documentation
+- Side-by-side view for generated tests
 - Clear error messages and notifications
 
 ## Prerequisites
@@ -99,7 +124,7 @@ Before using Bob-DTA, you need:
 4. Review the changes in the diff editor
 5. Click "Apply Changes" to update your file, or "Discard" to cancel
 
-### Example
+#### Documentation Example
 
 **Before:**
 ```javascript
@@ -120,6 +145,81 @@ function calculateTotal(items) {
 }
 ```
 
+### Generating Unit Tests ✨
+
+1. Open any code file you want to test
+2. Click the 🧪 "Generate Tests" button in the editor toolbar (top right)
+   - Or use Command Palette: `WatsonX: Generate Tests`
+3. Wait for the AI to generate comprehensive tests (usually 15-45 seconds)
+4. The test file will be created and opened side-by-side with your source code
+5. Review and run the tests using your test framework
+
+#### Test Generation Example
+
+**Source Code (calculator.js):**
+```javascript
+function add(a, b) {
+  return a + b;
+}
+
+function divide(a, b) {
+  if (b === 0) {
+    throw new Error('Cannot divide by zero');
+  }
+  return a / b;
+}
+```
+
+**Generated Tests (calculator.test.js):**
+```javascript
+const { add, divide } = require('./calculator');
+
+describe('Calculator Functions', () => {
+  describe('add', () => {
+    test('should add two positive numbers', () => {
+      expect(add(2, 3)).toBe(5);
+    });
+
+    test('should add negative numbers', () => {
+      expect(add(-2, -3)).toBe(-5);
+    });
+
+    test('should handle zero', () => {
+      expect(add(0, 5)).toBe(5);
+    });
+  });
+
+  describe('divide', () => {
+    test('should divide two numbers', () => {
+      expect(divide(10, 2)).toBe(5);
+    });
+
+    test('should throw error when dividing by zero', () => {
+      expect(() => divide(10, 0)).toThrow('Cannot divide by zero');
+    });
+
+    test('should handle negative numbers', () => {
+      expect(divide(-10, 2)).toBe(-5);
+    });
+  });
+});
+```
+
+#### Test File Naming Conventions
+
+The extension automatically creates test files following language-specific conventions:
+
+| Language | Source File | Test File |
+|----------|-------------|-----------|
+| JavaScript | `app.js` | `app.test.js` |
+| TypeScript | `utils.ts` | `utils.test.ts` |
+| Python | `calculator.py` | `test_calculator.py` |
+| Java | `Calculator.java` | `CalculatorTest.java` |
+| Go | `handler.go` | `handler_test.go` |
+| C++ | `math.cpp` | `math_test.cpp` |
+| C# | `Service.cs` | `ServiceTests.cs` |
+| Ruby | `parser.rb` | `parser_spec.rb` |
+
 ## Commands
 
 Access these commands via Command Palette (Ctrl+Shift+P / Cmd+Shift+P):
@@ -127,6 +227,7 @@ Access these commands via Command Palette (Ctrl+Shift+P / Cmd+Shift+P):
 - `WatsonX: Login with IBM Cloud` - Authenticate with IBM Cloud
 - `WatsonX: Logout` - Clear stored credentials
 - `WatsonX: Generate Documentation` - Generate docs for active file
+- `WatsonX: Generate Tests` - Generate unit tests for active file
 
 ## Configuration
 
@@ -140,21 +241,21 @@ Configure the extension via VS Code Settings (File > Preferences > Settings > Ex
 
 ## Supported Languages
 
-| Language | Documentation Format |
-|----------|---------------------|
-| JavaScript | JSDoc |
-| TypeScript | JSDoc |
-| Python | Docstrings |
-| Java | JavaDoc |
-| Go | Go doc comments |
-| C++ | Doxygen |
-| C | Doxygen |
-| C# | XML documentation |
-| Ruby | RDoc |
-| PHP | PHPDoc |
-| Rust | Rust doc comments |
-| Swift | Swift doc comments |
-| Kotlin | KDoc |
+| Language | Documentation Format | Test Framework |
+|----------|---------------------|----------------|
+| JavaScript | JSDoc | Jest |
+| TypeScript | JSDoc | Jest |
+| Python | Docstrings | pytest |
+| Java | JavaDoc | JUnit 5 |
+| Go | Go doc comments | Go testing |
+| C++ | Doxygen | Google Test |
+| C | Doxygen | Unity Test |
+| C# | XML documentation | xUnit |
+| Ruby | RDoc | RSpec |
+| PHP | PHPDoc | PHPUnit |
+| Rust | Rust doc comments | Rust test |
+| Swift | Swift doc comments | XCTest |
+| Kotlin | KDoc | JUnit 5 |
 
 ## Troubleshooting
 

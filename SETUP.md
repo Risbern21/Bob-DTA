@@ -20,7 +20,7 @@ IBM_CLOUD_CLIENT_ID=your_client_id_here
 IBM_CLOUD_CLIENT_SECRET=your_client_secret_here
 WATSONX_PROJECT_ID=your_project_id_here
 WATSONX_REGION=us-south
-WATSONX_MODEL=ibm/granite-34b-code-instruct
+WATSONX_MODEL=ibm/granite-8b-code-instruct
 ```
 
 ### 3. Compile the Extension

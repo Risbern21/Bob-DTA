@@ -215,7 +215,7 @@ interface WatsonXResponse {
 
 **API Configuration:**
 - Base URL: `https://us-south.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29`
-- Model: `ibm/granite-34b-code-instruct`
+- Model: `ibm/granite-8b-code-instruct`
 - Headers: `Authorization: Bearer {token}`, `Content-Type: application/json`
 
 **Parameters:**
@@ -467,7 +467,7 @@ const severityMap = {
   },
   "watsonx.model": {
     "type": "string",
-    "default": "ibm/granite-34b-code-instruct",
+    "default": "ibm/granite-8b-code-instruct",
     "description": "WatsonX model to use"
   },
   "watsonx.autoAnalyzeOnSave": {

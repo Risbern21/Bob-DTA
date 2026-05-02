@@ -52,7 +52,7 @@ Before using Bob-DTA, you need:
    IBM_CLOUD_CLIENT_SECRET=your_client_secret_here
    WATSONX_PROJECT_ID=your_project_id_here
    WATSONX_REGION=us-south
-   WATSONX_MODEL=ibm/granite-34b-code-instruct
+   WATSONX_MODEL=ibm/granite-8b-code-instruct
    ```
 
 6. Compile the extension:
@@ -136,7 +136,7 @@ Configure the extension via VS Code Settings (File > Preferences > Settings > Ex
 |---------|------|---------|-------------|
 | `watsonx.projectId` | string | "" | IBM watsonx Project ID |
 | `watsonx.region` | enum | "us-south" | IBM Cloud region (us-south, eu-de, jp-tok) |
-| `watsonx.model` | string | "ibm/granite-34b-code-instruct" | WatsonX model to use |
+| `watsonx.model` | string | "ibm/granite-8b-code-instruct" | WatsonX model to use |
 
 ## Supported Languages
 

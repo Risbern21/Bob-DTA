@@ -61,7 +61,7 @@
         },
         "watsonx.model": {
           "type": "string",
-          "default": "ibm/granite-34b-code-instruct",
+          "default": "ibm/granite-8b-code-instruct",
           "description": "WatsonX model to use"
         }
       }
@@ -80,14 +80,16 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/mocha": "^10.0.6",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.80.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "@vscode/test-electron": "^2.3.9",
     "eslint": "^8.56.0",
-    "mocha": "^10.2.0",
+    "glob": "^13.0.6",
+    "mocha": "^10.8.2",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "webpack": "^5.90.0",

@@ -11,7 +11,7 @@ IBM_CLOUD_CLIENT_SECRET=your_client_secret_here
 # WatsonX Configuration
 WATSONX_PROJECT_ID=your_project_id_here
 WATSONX_REGION=us-south
-WATSONX_MODEL=ibm/granite-34b-code-instruct
+WATSONX_MODEL=ibm/granite-8b-code-instruct
 ```
 
 ### How to Get IBM Cloud Credentials
@@ -37,7 +37,7 @@ WATSONX_MODEL=ibm/granite-34b-code-instruct
 
 ### WatsonX API
 - **Base URL:** `https://us-south.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29`
-- **Model:** `ibm/granite-34b-code-instruct`
+- **Model:** `ibm/granite-8b-code-instruct`
 - **Method:** POST
 - **Headers:**
   - `Authorization: Bearer {access_token}`
@@ -66,7 +66,7 @@ Access via: File > Preferences > Settings > Extensions > WatsonX
 |---------|------|---------|-------------|
 | `watsonx.projectId` | string | "" | IBM watsonx Project ID |
 | `watsonx.region` | enum | "us-south" | IBM Cloud region |
-| `watsonx.model` | string | "ibm/granite-34b-code-instruct" | Model to use |
+| `watsonx.model` | string | "ibm/granite-8b-code-instruct" | Model to use |
 | `watsonx.autoAnalyzeOnSave` | boolean | false | Auto-analyze on save |
 
 ---
@@ -100,7 +100,7 @@ Access via: File > Preferences > Settings > Extensions > WatsonX
 
 ```json
 {
-  "model_id": "ibm/granite-34b-code-instruct",
+  "model_id": "ibm/granite-8b-code-instruct",
   "input": "Your prompt here",
   "parameters": {
     "max_new_tokens": 1000,

@@ -16,8 +16,6 @@ cp .env.example .env
 
 Edit `.env` and add your credentials:
 ```env
-IBM_CLOUD_CLIENT_ID=your_client_id_here
-IBM_CLOUD_CLIENT_SECRET=your_client_secret_here
 WATSONX_PROJECT_ID=your_project_id_here
 WATSONX_REGION=us-south
 WATSONX_MODEL=ibm/granite-8b-code-instruct
@@ -34,20 +32,13 @@ Press **F5** in VS Code to launch the Extension Development Host.
 
 ## Getting IBM Cloud Credentials
 
-### Option 1: IBM Cloud API Key (Recommended for Testing)
+### IBM Cloud API Key
 
 1. Go to [IBM Cloud IAM API Keys](https://cloud.ibm.com/iam/apikeys)
 2. Click "Create an IBM Cloud API key"
 3. Give it a name (e.g., "Bob-DTA Extension")
 4. Copy the API key immediately (you won't be able to see it again)
-5. Use this as your `IBM_CLOUD_CLIENT_ID` (leave `CLIENT_SECRET` empty for now)
-
-### Option 2: OAuth Application (For Production)
-
-1. Contact IBM Cloud support to create an OAuth application
-2. Provide your redirect URI: `http://localhost:3000/callback` (or any port 3000-9000)
-3. Receive your Client ID and Client Secret
-4. Add both to your `.env` file
+5. Store it securely - you'll enter it when logging in to the extension
 
 ### Getting WatsonX Project ID
 
@@ -102,15 +93,17 @@ bob-dta/
 ├── src/
 │   ├── extension.ts              # Main entry point
 │   ├── auth/                     # Authentication modules
-│   │   ├── ibmAuth.ts           # OAuth orchestration
-│   │   ├── callbackServer.ts    # Local OAuth server
+│   │   ├── ibmAuth.ts           # API key authentication
+│   │   ├── callbackServer.ts    # Local callback server
 │   │   └── tokenManager.ts      # Token management
 │   ├── watsonx/                  # WatsonX API integration
 │   │   ├── apiClient.ts         # API client
 │   │   ├── prompts.ts           # Prompt templates
 │   │   └── types.ts             # TypeScript interfaces
 │   ├── features/                 # Feature implementations
-│   │   └── generateDocs.ts      # Documentation generation
+│   │   ├── generateDocs.ts      # Documentation generation
+│   │   ├── generateTests.ts     # Test generation
+│   │   └── analyzeBugs.ts       # Bug analysis
 │   ├── ui/                       # UI components
 │   │   └── statusBar.ts         # Status bar
 │   └── utils/                    # Utilities

@@ -64,10 +64,23 @@
     "configuration": {
       "title": "WatsonX",
       "properties": {
+        "watsonx.provider": {
+          "type": "string",
+          "enum": [
+            "watsonx-model",
+            "orchestrate-agent"
+          ],
+          "default": "watsonx-model",
+          "description": "AI provider to use for text generation",
+          "enumDescriptions": [
+            "Use watsonx.ai foundation models (Granite Code)",
+            "Use watsonx Orchestrate deployed agent"
+          ]
+        },
         "watsonx.projectId": {
           "type": "string",
           "default": "",
-          "description": "IBM watsonx Project ID"
+          "description": "IBM watsonx Project ID (for watsonx-model provider)"
         },
         "watsonx.region": {
           "type": "string",
@@ -77,12 +90,27 @@
             "jp-tok"
           ],
           "default": "us-south",
-          "description": "IBM Cloud region"
+          "description": "IBM Cloud region (for watsonx-model provider)"
         },
         "watsonx.model": {
           "type": "string",
           "default": "ibm/granite-8b-code-instruct",
-          "description": "WatsonX model to use"
+          "description": "WatsonX model to use (for watsonx-model provider)"
+        },
+        "watsonx.orchestrate.instanceUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Orchestrate instance URL (for orchestrate-agent provider)"
+        },
+        "watsonx.orchestrate.agentId": {
+          "type": "string",
+          "default": "",
+          "description": "Orchestrate agent ID (for orchestrate-agent provider)"
+        },
+        "watsonx.orchestrate.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Orchestrate API key (for orchestrate-agent provider, optional if using .env)"
         },
         "watsonx.bugDisplayMode": {
           "type": "string",

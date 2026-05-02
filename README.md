@@ -1,17 +1,18 @@
 # Bob-DTA - AI-Powered Code Assistant
 
-Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension that uses IBM watsonx.ai and the Granite Code model to automatically generate comprehensive documentation and unit tests for your code.
+Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension that uses IBM watsonx.ai and the Granite Code model to automatically generate comprehensive documentation, unit tests, and bug analysis for your code.
 
 ## Features
 
-### 📄 Generate Documentation
+### Generate Documentation
 - Automatically generates comprehensive inline documentation for your code
 - Supports 13+ programming languages (JavaScript, TypeScript, Python, Java, Go, C++, C#, Ruby, PHP, Rust, Swift, Kotlin, and more)
 - Uses language-specific documentation formats (JSDoc, docstrings, JavaDoc, etc.)
 - Shows a diff editor to review changes before applying
-- Powered by IBM's Granite 8B Code Instruct model
+- Configurable output: replace original file or create separate .documented file
+- Powered by IBM's Granite Code models
 
-### 🧪 Generate Unit Tests ✨ NEW
+### Generate Unit Tests
 - Automatically generates comprehensive unit test suites for your code
 - Detects and uses the appropriate test framework for each language:
   - JavaScript/TypeScript → Jest
@@ -35,17 +36,28 @@ Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension th
   - And more...
 - Opens test file side-by-side with source code
 
-### 🔐 Secure Authentication
-- OAuth 2.0 integration with IBM Cloud IAM
+### Analyze Bugs
+- AI-powered bug detection and code analysis
+- Detects logic errors, null references, security vulnerabilities, performance issues, and more
+- Configurable display modes:
+  - Inline comments: Add bug comments directly in code at problematic lines
+  - Diagnostics panel: Show bugs in VS Code's Problems panel with navigation
+  - Both: Combine inline comments and panel view
+- Severity levels: error, warning, info
+- Includes suggestions for fixing detected issues
+
+### Secure Authentication
+- API key authentication with IBM Cloud IAM
 - Secure token storage using VS Code's SecretStorage API
 - Automatic token refresh (tokens expire after 1 hour)
 - Easy login/logout from the status bar
 
-### 🎨 User-Friendly Interface
+### User-Friendly Interface
 - Status bar indicator showing connection status
-- Editor toolbar buttons for quick access (📄 Docs, 🧪 Tests)
+- Editor toolbar buttons for quick access
 - Visual diff editor to review generated documentation
 - Side-by-side view for generated tests
+- Integrated diagnostics for bug analysis
 - Clear error messages and notifications
 
 ## Prerequisites
@@ -53,7 +65,7 @@ Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension th
 Before using Bob-DTA, you need:
 
 1. **IBM Cloud Account**: Sign up at [cloud.ibm.com](https://cloud.ibm.com/registration)
-2. **IBM Cloud OAuth Credentials**: Client ID and Client Secret
+2. **IBM Cloud API Key**: For authentication with IBM Cloud IAM
 3. **WatsonX Project ID**: From [IBM watsonx.ai](https://dataplatform.cloud.ibm.com/)
 4. **Node.js 20+**: For development
 
@@ -73,8 +85,6 @@ Before using Bob-DTA, you need:
    ```
 5. Edit `.env` and add your IBM Cloud credentials:
    ```env
-   IBM_CLOUD_CLIENT_ID=your_client_id_here
-   IBM_CLOUD_CLIENT_SECRET=your_client_secret_here
    WATSONX_PROJECT_ID=your_project_id_here
    WATSONX_REGION=us-south
    WATSONX_MODEL=ibm/granite-8b-code-instruct
@@ -93,10 +103,12 @@ Before using Bob-DTA, you need:
 1. Go to [cloud.ibm.com/registration](https://cloud.ibm.com/registration)
 2. Sign up for a free account
 
-### Step 2: Get OAuth Credentials
-1. Go to [IBM Cloud IAM](https://cloud.ibm.com/iam/apikeys)
-2. Create an API key or OAuth application
-3. Note your Client ID and Client Secret
+### Step 2: Get API Key
+1. Go to [IBM Cloud IAM API Keys](https://cloud.ibm.com/iam/apikeys)
+2. Click "Create an IBM Cloud API key"
+3. Give it a name (e.g., "Bob-DTA Extension")
+4. Copy the API key immediately (you won't be able to see it again)
+5. Store it securely - you'll use it to authenticate in VS Code
 
 ### Step 3: Get WatsonX Project ID
 1. Go to [IBM watsonx.ai](https://dataplatform.cloud.ibm.com/)
@@ -111,18 +123,18 @@ Before using Bob-DTA, you need:
 1. Open VS Code with the Bob-DTA extension installed
 2. Look at the status bar (bottom left) - you'll see "WatsonX: Not logged in"
 3. Click the status bar item or run command: `WatsonX: Login with IBM Cloud`
-4. Your browser will open for IBM Cloud authentication
-5. Complete the login process
-6. Return to VS Code - you should see "WatsonX: Connected" in the status bar
+4. Enter your IBM Cloud API key when prompted
+5. The extension will authenticate and you should see "WatsonX: Connected" in the status bar
 
 ### Generating Documentation
 
 1. Open any code file (JavaScript, TypeScript, Python, Java, Go, C++, C#, etc.)
-2. Click the 📄 "Generate Docs" button in the editor toolbar (top right)
+2. Click the "Generate Docs" button in the editor toolbar (top right)
    - Or use Command Palette: `WatsonX: Generate Documentation`
 3. Wait for the AI to generate documentation (usually 10-30 seconds)
 4. Review the changes in the diff editor
-5. Click "Apply Changes" to update your file, or "Discard" to cancel
+5. Click "Apply Changes" to replace the original file, or "Save as New File" to create a .documented file
+   - Configure output mode in settings: `watsonx.docsOutputMode`
 
 #### Documentation Example
 
@@ -145,14 +157,52 @@ function calculateTotal(items) {
 }
 ```
 
-### Generating Unit Tests ✨
+### Generating Unit Tests
 
 1. Open any code file you want to test
-2. Click the 🧪 "Generate Tests" button in the editor toolbar (top right)
+2. Click the "Generate Tests" button in the editor toolbar (top right)
    - Or use Command Palette: `WatsonX: Generate Tests`
 3. Wait for the AI to generate comprehensive tests (usually 15-45 seconds)
 4. The test file will be created and opened side-by-side with your source code
 5. Review and run the tests using your test framework
+
+### Analyzing Bugs
+
+1. Open any code file you want to analyze
+2. Click the "Analyze Bugs" button in the editor toolbar (top right)
+   - Or use Command Palette: `WatsonX: Analyze Bugs`
+3. Wait for the AI to analyze your code (usually 10-30 seconds)
+4. Based on your display mode setting:
+   - **Inline mode**: Review bug comments in diff editor, click "Apply Comments" to add them
+   - **Panel mode**: Check the Problems panel for detected bugs
+   - **Both mode**: See bugs in both locations
+5. Fix the detected issues and re-run analysis to verify
+
+#### Bug Analysis Example
+
+**Code with Issues:**
+```javascript
+function calculateTotal(items) {
+  let total = 0;
+  for (let i = 0; i <= items.length; i++) {  // Bug: off-by-one error
+    total += items[i];
+  }
+  return total;
+}
+```
+
+**After Analysis (Inline Mode):**
+```javascript
+function calculateTotal(items) {
+  let total = 0;
+  // BUG: Off-by-one error - loop will access items[items.length] which is undefined
+  //    Suggestion: Change <= to < in the loop condition
+  for (let i = 0; i <= items.length; i++) {
+    total += items[i];
+  }
+  return total;
+}
+```
 
 #### Test Generation Example
 
@@ -224,10 +274,11 @@ The extension automatically creates test files following language-specific conve
 
 Access these commands via Command Palette (Ctrl+Shift+P / Cmd+Shift+P):
 
-- `WatsonX: Login with IBM Cloud` - Authenticate with IBM Cloud
+- `WatsonX: Login with IBM Cloud` - Authenticate with IBM Cloud using API key
 - `WatsonX: Logout` - Clear stored credentials
 - `WatsonX: Generate Documentation` - Generate docs for active file
 - `WatsonX: Generate Tests` - Generate unit tests for active file
+- `WatsonX: Analyze Bugs` - Analyze code for potential bugs and issues
 
 ## Configuration
 
@@ -238,6 +289,8 @@ Configure the extension via VS Code Settings (File > Preferences > Settings > Ex
 | `watsonx.projectId` | string | "" | IBM watsonx Project ID |
 | `watsonx.region` | enum | "us-south" | IBM Cloud region (us-south, eu-de, jp-tok) |
 | `watsonx.model` | string | "ibm/granite-8b-code-instruct" | WatsonX model to use |
+| `watsonx.bugDisplayMode` | enum | "both" | How to display bugs (inline, panel, both) |
+| `watsonx.docsOutputMode` | enum | "replace" | Documentation output (replace, newFile) |
 
 ## Supported Languages
 
@@ -274,8 +327,8 @@ Configure the extension via VS Code Settings (File > Preferences > Settings > Ex
 ### Network error
 **Solution:** Check your internet connection and IBM Cloud status
 
-### OAuth callback timeout
-**Solution:** Complete the login within 5 minutes. Try again if timeout occurs.
+### Authentication fails
+**Solution:** Ensure your API key is valid and has access to watsonx.ai. Check the Output panel for detailed error messages.
 
 ## Development
 
@@ -293,7 +346,9 @@ bob-dta/
 │   │   ├── prompts.ts           # Prompt templates
 │   │   └── types.ts             # TypeScript interfaces
 │   ├── features/
-│   │   └── generateDocs.ts      # Documentation feature
+│   │   ├── generateDocs.ts      # Documentation feature
+│   │   ├── generateTests.ts     # Test generation feature
+│   │   └── analyzeBugs.ts       # Bug analysis feature
 │   ├── ui/
 │   │   └── statusBar.ts         # Status bar component
 │   └── utils/
@@ -319,13 +374,7 @@ npm test            # Run tests
 3. Set breakpoints in TypeScript files
 4. Check Output panel > WatsonX for logs
 
-## Roadmap
-
-### Phase 2 (Coming Soon)
-- 🧪 **Generate Tests**: Automatically create comprehensive test suites
-- 🔍 **Analyze Code**: AI-powered code review with inline diagnostics
-
-### Future Enhancements
+## Future Enhancements
 - Support for more languages
 - Custom prompt templates
 - Batch documentation generation
@@ -333,9 +382,8 @@ npm test            # Run tests
 
 ## Privacy & Security
 
-- All credentials are stored securely using VS Code's SecretStorage API
+- API keys are stored securely using VS Code's SecretStorage API
 - Tokens are encrypted and never logged
-- OAuth flow uses CSRF protection
 - All API calls use HTTPS
 - No code is stored or transmitted except during API calls to IBM watsonx.ai
 
@@ -356,8 +404,8 @@ Built with:
 - IBM watsonx.ai and Granite Code models
 - VS Code Extension API
 - TypeScript
-- Express.js for OAuth callback server
+- Express.js for local callback server
 
 ---
 
-**Note:** This is an MVP (Minimum Viable Product) release focusing on documentation generation. Test generation and code analysis features are planned for future releases.
+Made with Bob

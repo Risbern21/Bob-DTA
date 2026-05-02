@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
+import { OrchestrateConfig } from '../watsonx/orchestrateTypes';
 
 // Load .env from the workspace root (not cwd, which can vary in extensions)
 const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -115,6 +116,51 @@ export class Config {
     }
     
     return 'replace'; // default fallback
+  }
+
+  /**
+   * Get AI provider type (watsonx-model or orchestrate-agent)
+   */
+  public getProviderType(): 'watsonx-model' | 'orchestrate-agent' {
+    const cfg = vscode.workspace.getConfiguration('watsonx');
+    const provider = cfg.get<string>('provider')?.trim() ||
+                     process.env.AI_PROVIDER?.trim() ||
+                     'watsonx-model';
+    
+    if (provider === 'watsonx-model' || provider === 'orchestrate-agent') {
+      return provider;
+    }
+    
+    return 'watsonx-model'; // default fallback
+  }
+
+  /**
+   * Get watsonx Orchestrate configuration
+   */
+  public getOrchestrateConfig(): OrchestrateConfig {
+    const cfg = vscode.workspace.getConfiguration('watsonx');
+
+    const instanceUrl =
+      cfg.get<string>('orchestrate.instanceUrl')?.trim() ||
+      process.env.ORCHESTRATE_INSTANCE_URL?.trim() ||
+      '';
+
+    const agentId =
+      cfg.get<string>('orchestrate.agentId')?.trim() ||
+      process.env.ORCHESTRATE_AGENT_ID?.trim() ||
+      '';
+
+    const apiKey =
+      cfg.get<string>('orchestrate.apiKey')?.trim() ||
+      process.env.ORCHESTRATE_API_KEY?.trim() ||
+      process.env.API_KEY?.trim() || // fallback to generic API_KEY
+      '';
+
+    return {
+      instanceUrl,
+      agentId,
+      apiKey
+    };
   }
 
   /**

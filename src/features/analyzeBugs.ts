@@ -1,10 +1,11 @@
 /**
  * Analyze Bugs Feature
- * Detects potential bugs in code using WatsonX AI and displays them inline or in diagnostics panel
+ * Detects potential bugs in code using AI providers and displays them inline or in diagnostics panel
  */
 
 import * as vscode from 'vscode';
-import { WatsonXApiClient } from '../watsonx/apiClient';
+import { ProviderFactory } from '../providers/ProviderFactory';
+import { ITextGenerationProvider } from '../providers/ITextGenerationProvider';
 import { generateBugAnalysisPrompt, isLanguageSupported } from '../watsonx/prompts';
 import { StatusBar } from '../ui/statusBar';
 import { IBMAuth } from '../auth/ibmAuth';
@@ -21,13 +22,13 @@ export interface BugReport {
 
 export class AnalyzeBugsFeature {
   private static instance: AnalyzeBugsFeature;
-  private apiClient: WatsonXApiClient;
+  private provider: ITextGenerationProvider;
   private statusBar: StatusBar;
   private auth: IBMAuth;
   private diagnosticCollection: vscode.DiagnosticCollection;
 
   private constructor() {
-    this.apiClient = WatsonXApiClient.getInstance();
+    this.provider = ProviderFactory.createProvider();
     this.statusBar = StatusBar.getInstance();
     this.auth = IBMAuth.getInstance();
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection('watsonx-bugs');
@@ -91,8 +92,9 @@ export class AnalyzeBugsFeature {
       // Generate prompt
       const prompt = generateBugAnalysisPrompt(code, languageId);
 
-      // Call WatsonX API
-      const analysisResult = await this.apiClient.generateText(prompt);
+      // Call AI provider
+      Logger.info(`Using provider: ${this.provider.getName()}`);
+      const analysisResult = await this.provider.generateText(prompt);
 
       // Hide processing state
       this.statusBar.hideProcessing(AuthState.Authenticated);

@@ -1,22 +1,23 @@
 /**
  * Generate Tests Feature
- * Generates comprehensive unit tests for code files using WatsonX AI
+ * Generates comprehensive unit tests for code files using AI providers
  */
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { WatsonXApiClient } from '../watsonx/apiClient';
+import { ProviderFactory } from '../providers/ProviderFactory';
+import { ITextGenerationProvider } from '../providers/ITextGenerationProvider';
 import { generateTestsPrompt, getTestFileName, isLanguageSupported } from '../watsonx/prompts';
 import { Logger } from '../utils/logger';
 import { IBMAuth } from '../auth/ibmAuth';
 
 export class GenerateTestsFeature {
   private static instance: GenerateTestsFeature;
-  private apiClient: WatsonXApiClient;
+  private provider: ITextGenerationProvider;
   private auth: IBMAuth;
 
   private constructor() {
-    this.apiClient = WatsonXApiClient.getInstance();
+    this.provider = ProviderFactory.createProvider();
     this.auth = IBMAuth.getInstance();
   }
 
@@ -88,10 +89,11 @@ export class GenerateTestsFeature {
           Logger.info(`Prompt generated, length: ${prompt.length} characters`);
           Logger.info(`Prompt preview: ${prompt.substring(0, 300)}...`);
 
-          progress.report({ message: 'Calling WatsonX AI...' });
+          progress.report({ message: `Calling ${this.provider.getName()}...` });
 
-          // Call WatsonX API
-          const generatedTests = await this.apiClient.generateText(prompt);
+          // Call AI provider
+          Logger.info(`Using provider: ${this.provider.getName()}`);
+          const generatedTests = await this.provider.generateText(prompt);
           
           Logger.info(`Received response from WatsonX, length: ${generatedTests?.length || 0}`);
 

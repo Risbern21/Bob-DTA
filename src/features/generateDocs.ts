@@ -4,7 +4,8 @@
  */
 
 import * as vscode from 'vscode';
-import { WatsonXApiClient } from '../watsonx/apiClient';
+import { ProviderFactory } from '../providers/ProviderFactory';
+import { ITextGenerationProvider } from '../providers/ITextGenerationProvider';
 import { generateDocsPrompt, isLanguageSupported, getLanguageName } from '../watsonx/prompts';
 import { StatusBar } from '../ui/statusBar';
 import { IBMAuth } from '../auth/ibmAuth';
@@ -14,12 +15,12 @@ import config from '../utils/config';
 
 export class GenerateDocsFeature {
   private static instance: GenerateDocsFeature;
-  private apiClient: WatsonXApiClient;
+  private provider: ITextGenerationProvider;
   private statusBar: StatusBar;
   private auth: IBMAuth;
 
   private constructor() {
-    this.apiClient = WatsonXApiClient.getInstance();
+    this.provider = ProviderFactory.createProvider();
     this.statusBar = StatusBar.getInstance();
     this.auth = IBMAuth.getInstance();
   }
@@ -82,8 +83,9 @@ export class GenerateDocsFeature {
       // Generate prompt
       const prompt = generateDocsPrompt(code, languageId);
 
-      // Call WatsonX API
-      const documentedCode = await this.apiClient.generateText(prompt);
+      // Call AI provider
+      Logger.info(`Using provider: ${this.provider.getName()}`);
+      const documentedCode = await this.provider.generateText(prompt);
 
       // Hide processing state
       this.statusBar.hideProcessing(AuthState.Authenticated);

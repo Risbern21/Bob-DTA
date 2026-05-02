@@ -1,19 +1,26 @@
 /**
  * Token Manager
- * Handles secure storage and refresh of IBM Cloud access tokens
+ * Handles secure storage and refresh of IBM Cloud IAM access tokens.
+ *
+ * IBM watsonx does NOT use OAuth client_id/client_secret.
+ * Instead, it uses: IBM Cloud API Key → IAM Bearer Token (expires in 1hr)
+ * Refresh is done by re-exchanging the stored API key — no refresh_token needed.
  */
 
 import * as vscode from 'vscode';
 import { TokenData } from '../watsonx/types';
 import { Logger } from '../utils/logger';
-import config from '../utils/config';
+
+const IAM_TOKEN_URL = 'https://iam.cloud.ibm.com/identity/token';
 
 export class TokenManager {
   private static instance: TokenManager;
   private context: vscode.ExtensionContext;
-  private readonly ACCESS_TOKEN_KEY = 'ibm_access_token';
-  private readonly REFRESH_TOKEN_KEY = 'ibm_refresh_token';
-  private readonly TOKEN_EXPIRY_KEY = 'ibm_token_expiry';
+
+  // Keys for VS Code SecretStorage
+  private readonly API_KEY_KEY = 'ibm_api_key';           // The long-lived IBM Cloud API key
+  private readonly ACCESS_TOKEN_KEY = 'ibm_access_token'; // Short-lived IAM bearer token
+  private readonly TOKEN_EXPIRY_KEY = 'ibm_token_expiry'; // Expiry timestamp (ms)
 
   private constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -34,15 +41,27 @@ export class TokenManager {
   }
 
   /**
-   * Store tokens securely in VS Code SecretStorage
+   * Store the IBM Cloud API key securely.
+   * This is the "credential" — never expires, used to mint new tokens.
+   */
+  public async storeApiKey(apiKey: string): Promise<void> {
+    try {
+      await this.context.secrets.store(this.API_KEY_KEY, apiKey);
+      Logger.info('IBM Cloud API key stored successfully');
+    } catch (error) {
+      Logger.error('Failed to store API key', error);
+      throw new Error('Failed to store IBM Cloud API key');
+    }
+  }
+
+  /**
+   * Store a fetched IAM access token and its expiry time.
    */
   public async storeTokens(tokenData: TokenData): Promise<void> {
     try {
       await this.context.secrets.store(this.ACCESS_TOKEN_KEY, tokenData.access_token);
-      await this.context.secrets.store(this.REFRESH_TOKEN_KEY, tokenData.refresh_token);
       await this.context.secrets.store(this.TOKEN_EXPIRY_KEY, tokenData.expiry_time.toString());
-      
-      Logger.info('Tokens stored successfully');
+      Logger.info('Access token stored successfully');
     } catch (error) {
       Logger.error('Failed to store tokens', error);
       throw new Error('Failed to store authentication tokens');
@@ -50,30 +69,30 @@ export class TokenManager {
   }
 
   /**
-   * Get access token, automatically refreshing if needed
+   * Get a valid access token.
+   * Automatically re-exchanges the API key if the token is missing or expiring soon.
    */
   public async getAccessToken(): Promise<string | null> {
     try {
       const accessToken = await this.context.secrets.get(this.ACCESS_TOKEN_KEY);
       const expiryTimeStr = await this.context.secrets.get(this.TOKEN_EXPIRY_KEY);
 
-      if (!accessToken || !expiryTimeStr) {
-        Logger.info('No stored access token found');
-        return null;
+      if (accessToken && expiryTimeStr) {
+        const expiryTime = parseInt(expiryTimeStr, 10);
+        const fiveMinutes = 5 * 60 * 1000;
+
+        // Token still valid — return it
+        if (expiryTime - Date.now() > fiveMinutes) {
+          return accessToken;
+        }
+
+        Logger.info('Access token expiring soon, refreshing via API key...');
+      } else {
+        Logger.info('No stored access token found, fetching new one...');
       }
 
-      const expiryTime = parseInt(expiryTimeStr, 10);
-      const now = Date.now();
-      const fiveMinutes = 5 * 60 * 1000;
-
-      // If token expires in less than 5 minutes, refresh it
-      if (expiryTime - now < fiveMinutes) {
-        Logger.info('Access token expiring soon, refreshing...');
-        const newToken = await this.refreshAccessToken();
-        return newToken;
-      }
-
-      return accessToken;
+      // Re-exchange API key for a fresh token
+      return await this.refreshAccessToken();
     } catch (error) {
       Logger.error('Failed to get access token', error);
       return null;
@@ -81,83 +100,83 @@ export class TokenManager {
   }
 
   /**
-   * Refresh the access token using the refresh token
+   * Fetch a new IAM access token using the stored API key.
+   * IBM IAM tokens expire in 3600 seconds (1 hour).
    */
   public async refreshAccessToken(): Promise<string | null> {
     try {
-      const refreshToken = await this.context.secrets.get(this.REFRESH_TOKEN_KEY);
-      
-      if (!refreshToken) {
-        Logger.warn('No refresh token available');
+      const apiKey = await this.context.secrets.get(this.API_KEY_KEY);
+
+      if (!apiKey) {
+        Logger.warn('No IBM Cloud API key found — user must log in first');
         return null;
       }
 
-      const authConfig = config.getIBMAuthConfig();
-      
+      Logger.info('Exchanging API key for IAM access token...');
+
       const params = new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: authConfig.clientId,
-        client_secret: authConfig.clientSecret
+        grant_type: 'urn:ibm:params:oauth:grant-type:apikey',
+        apikey: apiKey
       });
 
-      Logger.info('Refreshing access token...');
-      const response = await fetch(authConfig.tokenUrl, {
+      const response = await fetch(IAM_TOKEN_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
         },
         body: params.toString()
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        Logger.error('Token refresh failed', { status: response.status, error: errorText });
-        
-        // If refresh fails, clear all tokens
-        await this.clearTokens();
+        Logger.error('IAM token exchange failed', { status: response.status, error: errorText });
+
+        if (response.status === 400 || response.status === 401) {
+          // API key is invalid — clear everything so user re-enters it
+          await this.clearTokens();
+          Logger.warn('API key rejected by IBM IAM — credentials cleared');
+        }
         return null;
       }
 
       const data: any = await response.json();
-      
+
       const tokenData: TokenData = {
         access_token: data.access_token,
-        refresh_token: data.refresh_token || refreshToken, // Some APIs don't return new refresh token
-        expires_in: data.expires_in,
-        token_type: data.token_type,
+        refresh_token: '',                                    // IBM IAM doesn't use refresh tokens
+        expires_in: data.expires_in,                         // Typically 3600
+        token_type: data.token_type,                         // "Bearer"
         expiry_time: Date.now() + (data.expires_in * 1000)
       };
 
       await this.storeTokens(tokenData);
-      Logger.info('Access token refreshed successfully');
-      
+      Logger.info('IAM access token fetched and stored successfully');
+
       return tokenData.access_token;
     } catch (error) {
       Logger.error('Failed to refresh access token', error);
-      await this.clearTokens();
       return null;
     }
   }
 
   /**
-   * Check if user is authenticated
+   * Check if an API key is stored (i.e. user has "logged in")
    */
   public async isAuthenticated(): Promise<boolean> {
-    const accessToken = await this.context.secrets.get(this.ACCESS_TOKEN_KEY);
-    const refreshToken = await this.context.secrets.get(this.REFRESH_TOKEN_KEY);
-    return !!(accessToken && refreshToken);
+    const apiKey = await this.context.secrets.get(this.API_KEY_KEY);
+    return !!apiKey;
   }
 
   /**
-   * Clear all stored tokens
+   * Clear all stored credentials (API key + cached token)
    */
   public async clearTokens(): Promise<void> {
     try {
+      await this.context.secrets.delete(this.API_KEY_KEY);
       await this.context.secrets.delete(this.ACCESS_TOKEN_KEY);
-      await this.context.secrets.delete(this.REFRESH_TOKEN_KEY);
       await this.context.secrets.delete(this.TOKEN_EXPIRY_KEY);
-      Logger.info('Tokens cleared');
+      Logger.info('All IBM credentials cleared');
     } catch (error) {
       Logger.error('Failed to clear tokens', error);
       throw new Error('Failed to clear authentication tokens');
@@ -165,7 +184,7 @@ export class TokenManager {
   }
 
   /**
-   * Get token expiry time
+   * Get token expiry time in ms
    */
   public async getTokenExpiry(): Promise<number | null> {
     const expiryTimeStr = await this.context.secrets.get(this.TOKEN_EXPIRY_KEY);

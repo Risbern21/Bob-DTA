@@ -6,9 +6,20 @@
 import * as vscode from 'vscode';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
-// Load .env file
-dotenv.config();
+// Load .env from the workspace root (not cwd, which can vary in extensions)
+const workspaceFolders = vscode.workspace.workspaceFolders;
+const workspaceRoot = workspaceFolders?.[0]?.uri?.fsPath;
+const envPath = workspaceRoot
+  ? path.join(workspaceRoot, '.env')
+  : path.join(__dirname, '..', '.env'); // fallback: one level above dist/
+
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+} else {
+  dotenv.config(); // last-resort: use cwd
+}
 
 export class Config {
   private static instance: Config;
@@ -23,51 +34,60 @@ export class Config {
   }
 
   /**
-   * Get IBM Cloud OAuth configuration from environment variables
+   * Get the IBM Cloud API key for IAM token exchange.
+   * No longer needs client_id or client_secret — IBM watsonx uses API key auth.
+   * The key is stored in VS Code SecretStorage (via TokenManager), not config files.
+   * This method just validates the env fallback if someone prefers it.
    */
   public getIBMAuthConfig() {
-    const clientId = process.env.IBM_CLOUD_CLIENT_ID;
-    const clientSecret = process.env.IBM_CLOUD_CLIENT_SECRET;
-
-    if (!clientId || !clientSecret) {
-      throw new Error(
-        'IBM Cloud credentials not found. Please set IBM_CLOUD_CLIENT_ID and IBM_CLOUD_CLIENT_SECRET in .env file'
-      );
-    }
-
     return {
-      clientId,
-      clientSecret,
-      authorizationUrl: 'https://iam.cloud.ibm.com/identity/authorize',
-      tokenUrl: 'https://iam.cloud.ibm.com/identity/token',
-      scope: 'openid'
+      tokenUrl: 'https://iam.cloud.ibm.com/identity/token'
     };
   }
 
   /**
-   * Get WatsonX configuration from VS Code settings and environment
+   * Get WatsonX configuration from VS Code settings or .env file.
+   *
+   * VS Code settings key: "bobDta.watsonx.projectId"  ← must match package.json contributes.configuration
+   * .env fallback:         WATSONX_PROJECT_ID
    */
   public getWatsonXConfig() {
-    const config = vscode.workspace.getConfiguration('watsonx');
-    
-    // Try VS Code settings first, fall back to environment variables
-    const projectId = config.get<string>('projectId') || process.env.WATSONX_PROJECT_ID || '';
-    const region = config.get<string>('region') || process.env.WATSONX_REGION || 'us-south';
-    const model = config.get<string>('model') || process.env.WATSONX_MODEL || 'ibm/granite-34b-code-instruct';
+    // NOTE: The prefix here must match the "contributes.configuration" id in your package.json
+    // If your extension id is "bobDta", use getConfiguration('bobDta.watsonx')
+    // If it's just "watsonx", use getConfiguration('watsonx')
+    const cfg = vscode.workspace.getConfiguration('bobDta.watsonx');
+
+    const projectId =
+      cfg.get<string>('projectId')?.trim() ||
+      process.env.WATSONX_PROJECT_ID?.trim() ||
+      '';
+
+    const region =
+      cfg.get<string>('region')?.trim() ||
+      process.env.WATSONX_REGION?.trim() ||
+      'us-south';
+
+    const model =
+      cfg.get<string>('model')?.trim() ||
+      process.env.WATSONX_MODEL?.trim() ||
+      'ibm/granite-8b-code-instruct';
 
     if (!projectId) {
       throw new Error(
-        'WatsonX Project ID not found. Please set it in VS Code settings or WATSONX_PROJECT_ID in .env file'
+        'WatsonX Project ID not found.\n\n' +
+        'Option 1 — Add to your .env file:\n' +
+        '  WATSONX_PROJECT_ID=your-project-id\n\n' +
+        'Option 2 — Add to VS Code settings.json:\n' +
+        '  "bobDta.watsonx.projectId": "your-project-id"\n\n' +
+        'Find your Project ID at: watsonx dashboard → your project → Manage → General'
       );
     }
-
-    const baseUrl = this.getWatsonXBaseUrl(region);
 
     return {
       projectId,
       region,
       model,
-      baseUrl
+      baseUrl: this.getWatsonXBaseUrl(region)
     };
   }
 
@@ -75,26 +95,22 @@ export class Config {
    * Get WatsonX API base URL based on region
    */
   private getWatsonXBaseUrl(region: string): string {
-    const regionUrls: { [key: string]: string } = {
+    const regionUrls: Record<string, string> = {
       'us-south': 'https://us-south.ml.cloud.ibm.com',
-      'eu-de': 'https://eu-de.ml.cloud.ibm.com',
-      'jp-tok': 'https://jp-tok.ml.cloud.ibm.com'
+      'eu-de':    'https://eu-de.ml.cloud.ibm.com',
+      'jp-tok':   'https://jp-tok.ml.cloud.ibm.com',
+      'eu-gb':    'https://eu-gb.ml.cloud.ibm.com'
     };
 
-    return regionUrls[region] || regionUrls['us-south'];
+    return regionUrls[region] ?? regionUrls['us-south'];
   }
 
   /**
-   * Validate that all required configuration is present
+   * Validate all required config is present.
+   * IBM auth credentials are now stored in SecretStorage (not validated here).
    */
   public validateConfig(): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
-
-    try {
-      this.getIBMAuthConfig();
-    } catch (error) {
-      errors.push((error as Error).message);
-    }
 
     try {
       this.getWatsonXConfig();

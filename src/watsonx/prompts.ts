@@ -149,7 +149,7 @@ const TEST_FILE_PATTERNS: { [key: string]: (fileName: string) => string } = {
   csharp: (name) => `${name}Tests.cs`,
   ruby: (name) => `${name}_spec.rb`,
   php: (name) => `${name}Test.php`,
-  rust: (name) => `${name}_test.rs`,
+  rust: (name) => `${name}.rs`,
   swift: (name) => `${name}Tests.swift`,
   kotlin: (name) => `${name}Test.kt`
 };
@@ -176,8 +176,66 @@ export function generateTestsPrompt(code: string, languageId: string, fileName: 
   const testFramework = getTestFramework(languageId);
   const language = getLanguageName(languageId);
 
-  return `<|system|>
-You are an expert ${language} developer. You always write complete, working unit test code.
+  if (languageId.toLowerCase() === 'rust') {
+    return `<|system|>
+You are an expert Rust developer. You only write \`#[test]\` functions inside a \`#[cfg(test)]\` module. You never rewrite or redeclare existing functions.
+<|user|>
+Append a test module to the following Rust code from file: ${fileName}
+
+\`\`\`rust
+${code}
+\`\`\`
+
+Rules:
+- Output the original code first, unchanged
+- Then append a single \`#[cfg(test)]\` module at the bottom
+- Start the module with \`use super::*;\`
+- Only write \`#[test]\` functions — never redeclare source functions
+- Test the actual implemented behavior (not what the name implies)
+- Cover: happy path, edge cases, and \`#[should_panic]\` cases
+- Use \`assert_eq!\`, \`assert!\`, and \`assert_ne!\` appropriately
+- No external crates — use only Rust's built-in test framework
+- Read the function body carefully before writing assertions
+
+Output the full file now:
+<|assistant|>
+${code}
+
+#[cfg(test)]
+mod tests {
+    use super::*;`;
+  }
+
+  if (languageId.toLowerCase() === 'python') {
+    return `<|system|>
+You are an expert Python developer. You only write pytest test functions. You never rewrite or redeclare source functions.
+<|user|>
+Write pytest unit tests for the following Python code from file: ${fileName}
+
+\`\`\`python
+${code}
+\`\`\`
+
+Rules:
+- Do NOT redeclare or rewrite any function from the source file
+- Import with: from ${fileName} import *
+- Only write \`def test_\` functions
+- Test the actual implemented behavior (not what the function name implies)
+- Cover: happy path, edge cases, and TypeError/ValueError with \`pytest.raises\`
+- Use plain \`assert\` statements only
+- Read the function body carefully before writing assertions
+
+Begin now:
+<|assistant|>
+import pytest
+from ${fileName} import *
+
+
+def test_`;
+  }
+
+   return `<|system|>
+You are an expert ${language} developer. You only write complete, working unit test code. You never rewrite source functions.
 <|user|>
 Write ${testFramework} unit tests for the following ${language} code from file: ${fileName}
 
@@ -185,11 +243,13 @@ Write ${testFramework} unit tests for the following ${language} code from file: 
 ${code}
 \`\`\`
 
-Requirements:
-- Use ${testFramework} syntax
+Rules:
+- Do NOT redeclare or rewrite any function from the source file
 - Include all necessary imports
-- Test happy path, edge cases, and error cases
+- Test actual implemented behavior, not what function names imply
+- Cover: happy path, edge cases, and error cases
 - Write descriptive test names
+- Read the function body carefully before writing assertions
 
 Begin the test file now:
 <|assistant|>

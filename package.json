@@ -1,0 +1,100 @@
+{
+  "name": "bob-dta",
+  "displayName": "Bob-DTA",
+  "description": "AI-powered code documentation, test generation, and analysis using IBM watsonx.ai",
+  "version": "0.0.1",
+  "publisher": "bob-dta",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Testing",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "watsonx.login",
+        "title": "WatsonX: Login with IBM Cloud"
+      },
+      {
+        "command": "watsonx.logout",
+        "title": "WatsonX: Logout"
+      },
+      {
+        "command": "watsonx.generateDocs",
+        "title": "WatsonX: Generate Documentation",
+        "icon": "$(book)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "watsonx.generateDocs",
+          "when": "editorLangId =~ /javascript|typescript|python|java|go|cpp|csharp|c/",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "WatsonX",
+      "properties": {
+        "watsonx.projectId": {
+          "type": "string",
+          "default": "",
+          "description": "IBM watsonx Project ID"
+        },
+        "watsonx.region": {
+          "type": "string",
+          "enum": [
+            "us-south",
+            "eu-de",
+            "jp-tok"
+          ],
+          "default": "us-south",
+          "description": "IBM Cloud region"
+        },
+        "watsonx.model": {
+          "type": "string",
+          "default": "ibm/granite-34b-code-instruct",
+          "description": "WatsonX model to use"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.56.0",
+    "mocha": "^10.2.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2"
+  }
+}

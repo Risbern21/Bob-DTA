@@ -1,6 +1,6 @@
-# Bob-DTA - AI-Powered Code Assistant
+# DTA
 
-Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension that uses IBM watsonx.ai and the Granite Code model to automatically generate comprehensive documentation, unit tests, and bug analysis for your code.
+DTA (Documentation,Unit Test generation, and Analysis) is a VS Code extension that uses IBM watsonx.ai and the Granite Code model to automatically generate comprehensive documentation, unit tests, and bug analysis for your code.
 
 ## Features
 
@@ -62,7 +62,7 @@ Bob-DTA (Documentation, Test generation, and Analysis) is a VS Code extension th
 
 ## Prerequisites
 
-Before using Bob-DTA, you need:
+Before using DTA, you need:
 
 1. **IBM Cloud Account**: Sign up at [cloud.ibm.com](https://cloud.ibm.com/registration)
 2. **IBM Cloud API Key**: For authentication with IBM Cloud IAM
@@ -106,7 +106,7 @@ Before using Bob-DTA, you need:
 ### Step 2: Get API Key
 1. Go to [IBM Cloud IAM API Keys](https://cloud.ibm.com/iam/apikeys)
 2. Click "Create an IBM Cloud API key"
-3. Give it a name (e.g., "Bob-DTA Extension")
+3. Give it a name (e.g., DTA Extension")
 4. Copy the API key immediately (you won't be able to see it again)
 5. Store it securely - you'll use it to authenticate in VS Code
 
@@ -120,11 +120,12 @@ Before using Bob-DTA, you need:
 
 ### First Time Setup
 
-1. Open VS Code with the Bob-DTA extension installed
-2. Look at the status bar (bottom left) - you'll see "WatsonX: Not logged in"
-3. Click the status bar item or run command: `WatsonX: Login with IBM Cloud`
-4. Enter your IBM Cloud API key when prompted
-5. The extension will authenticate and you should see "WatsonX: Connected" in the status bar
+1. Open VS Code with the
+2. DTA extension installed
+3. Look at the status bar (bottom left) - you'll see "WatsonX: Not logged in"
+4. Click the status bar item or run command: `WatsonX: Login with IBM Cloud`
+5. Enter your IBM Cloud API key when prompted
+6. The extension will authenticate and you should see "WatsonX: Connected" in the status bar
 
 ### Generating Documentation
 
@@ -334,7 +335,7 @@ Configure the extension via VS Code Settings (File > Preferences > Settings > Ex
 
 ### Project Structure
 ```
-bob-dta/
+dta/
 ├── src/
 │   ├── extension.ts              # Main entry point
 │   ├── auth/

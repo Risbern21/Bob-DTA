@@ -1,9 +1,9 @@
 {
-  "name": "bob-dta",
-  "displayName": "Bob-DTA",
-  "description": "AI-powered code documentation, test generation, and analysis using IBM watsonx.ai",
+  "name": "dta",
+  "displayName": "DTA",
+  "description": "AI-powered code documentation, test generation, and analysis using IBM watsonx orchestrate agent and watsonx.ai",
   "version": "0.0.1",
-  "publisher": "bob-dta",
+  "publisher": "grusty21",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -20,25 +20,25 @@
     "commands": [
       {
         "command": "watsonx.login",
-        "title": "WatsonX: Login with IBM Cloud"
+        "title": "DTA: Login with IBM Cloud"
       },
       {
         "command": "watsonx.logout",
-        "title": "WatsonX: Logout"
+        "title": "DTA: Logout"
       },
       {
         "command": "watsonx.generateDocs",
-        "title": "WatsonX: Generate Documentation",
+        "title": "DTA: Generate Documentation",
         "icon": "$(book)"
       },
       {
         "command": "watsonx.generateTests",
-        "title": "WatsonX: Generate Tests",
+        "title": "DTA: Generate Tests",
         "icon": "$(beaker)"
       },
       {
         "command": "watsonx.analyzeBugs",
-        "title": "WatsonX: Analyze Bugs",
+        "title": "DTA: Analyze Bugs",
         "icon": "$(bug)"
       }
     ],
